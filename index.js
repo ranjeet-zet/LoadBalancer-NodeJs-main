@@ -1,15 +1,16 @@
 import http from 'http'
 import pkg from 'http-proxy'
+import dotenv from "dotenv"
 const { createProxyServer } = pkg;
-
+import serversConfig from './configration.js';
+dotenv.config({
+    path: './.env'
+})
 //proxy server
 const proxy = createProxyServer();
 
 //List of server to load balance between 
-const servers = [
-    { host: "localhost", port: 3000 },
-    { host: "localhost", port: 3001 },
-]
+const servers = serversConfig;
 
 // create the load balancer
 const loadbalancer = http.createServer((req, res) => {
@@ -28,8 +29,12 @@ process.on('uncaughtException', (err) => {
 
 // Listen for proxy errors
 proxy.on('error', (err, req, res) => {
-    console.log('Connection error in:', req.url);
-    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    console.log('Connection error in:', {port:err.errors[1].port,
+        address:err.errors[1].address,
+        path:req.url,
+    });
+    // host:'http://'+err.errors[1].address+":"+err.errors[1].port+req.url
+    res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end('Internal Server Error...');
 });
 
